@@ -5,6 +5,7 @@ module.exports = function(RED) {
         this.timeout = null;
         this.valueInRange = false;
         this.lastValue = null;
+        this.msg = null;
 
         if (config.units == "s") { config.for = config.for * 1000; }
         if (config.units == "min") { config.for = config.for * 1000 * 60; }
@@ -20,6 +21,7 @@ module.exports = function(RED) {
                 clearTimeout(node.timeout);
                 node.timeout = null;
                 node.valueInRange = false;
+                node.msg = null;
                 const msg = {
                     reset: 1,
                     payload: node.lastValue
@@ -37,9 +39,9 @@ module.exports = function(RED) {
         }
 
         function timerFn() {
-            const msg = {
-                payload: node.lastValue
-            }
+            msg = node.msg
+            msg.payload = node.lastValue
+            node.msg = null;
             node.send([msg, null]);
             node.status({fill: "green", shape: "dot", text: `${node.lastValue} ${getFormattedNow('since')}`});
             if (config.continuous) {
@@ -83,6 +85,9 @@ module.exports = function(RED) {
                                 node.valueInRange = false;
                             }
                         }
+                    }
+                    if (node.msg == null) {
+                        node.msg = msg;
                     }
                     node.lastValue = currentValue;
                     if (node.valueInRange) {
